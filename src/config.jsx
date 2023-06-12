@@ -1,0 +1,2 @@
+export const SITE_KEY = '6Le6NoYmAAAAAA24keSWrAUGOqkQ7fxux7dD3kHQ'
+export const SECRET_KEY = '6Le6NoYmAAAAADEVOiPQWXw6Zj5NmEakwIxUDEX7'
