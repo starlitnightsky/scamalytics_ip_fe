@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react'
 
@@ -51,6 +52,7 @@ const backColor: any = {
 
 export const Container = () => {
   const [riskList, setRiskList] = useState<RiskType[]>([])
+  const [safeProxy, setSafeProxy] = useState<String[]>([])
   const [newRisk, setNewRisk] = useState<RiskType>(initialProxy)
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState('')
@@ -74,22 +76,35 @@ export const Container = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      setValue('')
       setNewRisk(initialProxy)
+      if (safeProxy.length === 0) {
+        setValue('')
+      }
     }
   }, [isLoading])
+
+  useEffect(() => {
+    const tempValue = safeProxy.join('\n')
+    setValue(tempValue)
+  }, [safeProxy])
+
   const handleClick = async () => {
+    if (value === '') return
     const proxyArr = value.split('\n')
-    const proxyList = proxyArr.map((item) => {
+    const proxyList: ProxyType[] = []
+    for (let i = 0; i < proxyArr.length; i++) {
+      const item = proxyArr[i]
       const tempArr = item.split(':')
-      const newItem: ProxyType = {
-        host: tempArr[0],
-        port: tempArr[1],
-        username: tempArr[2],
-        password: tempArr[3],
+      if (tempArr.length === 4) {
+        const newItem: ProxyType = {
+          host: tempArr[0],
+          port: tempArr[1],
+          username: tempArr[2],
+          password: tempArr[3],
+        }
+        proxyList.push(newItem)
       }
-      return newItem
-    })
+    }
 
     setIsLoading(true)
     for (let i = 0; i < proxyList.length; i++) {
@@ -97,19 +112,27 @@ export const Container = () => {
       if (checkResponse.data.status === 'success') {
         const ipAddress = checkResponse.data.origin
         const scamIpResponse = await checkIP(ipAddress)
-        const ipLocationResponse = await ipLocation(ipAddress)
-        console.log(scamIpResponse)
-        const newRiskItem: RiskType = {
-          ipAddress: ipAddress,
-          score: scamIpResponse.data.score,
-          status: scamIpResponse.data.risk,
-          location: ipLocationResponse.location,
+        if (scamIpResponse.data.risk === 'low') {
+          const ipLocationResponse = await ipLocation(ipAddress)
+          const newRiskItem: RiskType = {
+            ipAddress: ipAddress,
+            score: scamIpResponse.data.score,
+            status: scamIpResponse.data.risk,
+            location: ipLocationResponse.location,
+          }
+          const newSafeProxy = `${proxyList[i]?.host}:${proxyList[i]?.port}:${proxyList[i]?.username}:${proxyList[i]?.password}`
+          safeProxy.push(newSafeProxy)
+          setSafeProxy(() => safeProxy)
+          setNewRisk(newRiskItem)
         }
-        setNewRisk(newRiskItem)
       }
     }
-
     setIsLoading(false)
+  }
+
+  const handleClickClear = () => {
+    setValue('')
+    setSafeProxy([])
   }
 
   return (
@@ -122,8 +145,23 @@ export const Container = () => {
           rows={7}
         />
         <Flex gap='50px'>
-          <Button colorScheme='facebook' width='200px' onClick={handleClick}>
+          <Button
+            colorScheme='facebook'
+            width='200px'
+            onClick={handleClick}
+            isLoading={isLoading}
+            loadingText='A D D'
+          >
             A D D
+          </Button>
+          <Button
+            colorScheme='facebook'
+            width='200px'
+            onClick={handleClickClear}
+            isLoading={isLoading}
+            loadingText='C L E A R'
+          >
+            C L E A R
           </Button>
           {isLoading && (
             <Flex>
