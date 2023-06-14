@@ -20,6 +20,7 @@ import {
   Image,
   Spinner,
   Textarea,
+  Progress,
 } from '@chakra-ui/react'
 
 type RiskType = {
@@ -56,6 +57,8 @@ export const Container = () => {
   const [newRisk, setNewRisk] = useState<RiskType>(initialProxy)
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState('')
+  const [progress, setprogress] = useState(0)
+  const [total, setTotal] = useState(0)
 
   const toast = useToast()
 
@@ -72,6 +75,8 @@ export const Container = () => {
       duration: 5000,
       isClosable: true,
     })
+    const tempValue = safeProxy.join('\n')
+    setValue(tempValue)
   }, [newRisk])
 
   useEffect(() => {
@@ -80,13 +85,10 @@ export const Container = () => {
       if (safeProxy.length === 0) {
         setValue('')
       }
+      setprogress(0)
+      setTotal(0)
     }
   }, [isLoading])
-
-  useEffect(() => {
-    const tempValue = safeProxy.join('\n')
-    setValue(tempValue)
-  }, [safeProxy])
 
   const handleClick = async () => {
     if (value === '') return
@@ -105,9 +107,11 @@ export const Container = () => {
         proxyList.push(newItem)
       }
     }
+    setTotal(proxyList.length)
 
     setIsLoading(true)
     for (let i = 0; i < proxyList.length; i++) {
+      setprogress(i + 1)
       const checkResponse = await proxyCheck(proxyList[i])
       if (checkResponse.data.status === 'success') {
         const ipAddress = checkResponse.data.origin
@@ -133,6 +137,8 @@ export const Container = () => {
   const handleClickClear = () => {
     setValue('')
     setSafeProxy([])
+    setprogress(0)
+    setTotal(0)
   }
 
   return (
@@ -144,6 +150,7 @@ export const Container = () => {
           onChange={(e) => setValue(e.target.value)}
           rows={7}
         />
+        {isLoading && <Progress hasStripe value={(progress / total) * 100} />}
         <Flex gap='50px'>
           <Button
             colorScheme='facebook'
